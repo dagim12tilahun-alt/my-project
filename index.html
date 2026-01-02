@@ -1,163 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Watch Sequence</title>
-    <style>
-        body {
-            background-color: #0e0e0e;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        .watch-container {
-            background: #1a1a1a;
-            padding: 40px;
-            border-radius: 20px;
-            border: 4px solid #2a2a2a;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
-            margin-bottom: 30px;
-        }
-
-        .lcd-screen {
-            background: #050505;
-            padding: 20px 30px;
-            border-radius: 10px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-width: 280px;
-        }
-
-        .display-text {
-            font-size: 85px;
-            font-weight: bold;
-            letter-spacing: 8px;
-            margin: 0;
-        }
-
-        .active-segments {
-            color: #D3D3D3;
-            z-index: 2;
-            position: relative;
-        }
-
-        .ghost-segments {
-            color: #1a1a1a;
-            position: absolute;
-            z-index: 1;
-        }
-
-        .controls {
-            width: 350px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        textarea {
-            width: 100%;
-            background: #111;
-            border: 1px solid #333;
-            color: #D3D3D3;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        .enter-btn {
-            background-color: #D3D3D3;
-            color: #111;
-            border: none;
-            padding: 15px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .enter-btn:active {
-            background-color: #999;
-        }
-    </style>
-</head>
+<html>
 <body>
 
-    <div class="watch-container">
-        <div class="lcd-screen">
-            <div class="display-text ghost-segments">88:88</div>
-            <div id="clock" class="display-text active-segments">00:00</div>
-        </div>
-    </div>
+    <h1 id="watch" style="font-size: 100px; font-family: monospace;">00:00</h1>
 
-    <div class="controls">
-        <textarea id="inputSequence" rows="2" placeholder="Example: 37.e"></textarea>
-        <button id="enterBtn" class="enter-btn">Enter</button>
-    </div>
+    <textarea id="inputBox" rows="4" placeholder="Type 37.e here"></textarea>
+    <br><br>
+    
+    <button id="btn" style="padding: 20px; font-size: 20px;">ENTER</button>
 
     <script>
-        const clockElement = document.getElementById('clock');
-        const inputArea = document.getElementById('inputSequence');
-        const enterBtn = document.getElementById('enterBtn');
+        const watch = document.getElementById('watch');
+        const inputBox = document.getElementById('inputBox');
+        const btn = document.getElementById('btn');
         
-        let index = 0;
-        let cycleInterval = null;
-        const letterMap = { a: '1', b: '2', c: '3', d: '4', e: '5' };
+        let counter = 0;
+        let timer = null;
+        const map = { a: '1', b: '2', c: '3', d: '4', e: '5' };
 
-        function startSequence() {
-            clearInterval(cycleInterval);
-            index = 0;
+        function run() {
+            clearInterval(timer); // Stop old cycle
+            counter = 0;
 
-            const executeUpdate = () => {
-                const text = inputArea.value.trim();
-                // Split by comma OR just take the whole thing if no comma
-                const sequence = text.includes(',') 
-                    ? text.split(',').map(s => s.trim()).filter(s => s.length > 0)
-                    : [text];
+            const update = () => {
+                const text = inputBox.value.trim();
+                // Split by comma or treat as one item
+                const list = text.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-                if (sequence.length === 0 || !sequence[0]) return;
+                if (list.length === 0) return;
 
-                const currentItem = sequence[index % sequence.length];
-                // Improved Regex: looks for digits, a dot, then a letter a-e
-                const match = currentItem.match(/(\d+)\s*\.\s*([a-eA-E])/);
-if (match) {
-                    const numPart = match[1].padStart(2, '0').slice(-2);
-                    const letterPart = match[2].toLowerCase();
-                    const mappedNum = letterMap[letterPart];
+                const current = list[counter % list.length];
+                
+                // Purely looking for [Number].[Letter]
+                const parts = current.split('.');
+                if (parts.length === 2) {
+                    const num = parts[0].padStart(2, '0').slice(-2);
+                    const letter = parts[1].toLowerCase().trim();
+                    const converted = map[letter] || '0';
                     
-                    clockElement.innerText = ${numPart}:0${mappedNum};
-                } else {
-                    console.log("No match found for:", currentItem);
+                    // The Result
+                    watch.innerText = num + ":0" + converted;
                 }
-                index++;
+                counter++;
             };
 
-            executeUpdate();
-            // Only start interval if there's more than one item
-            const text = inputArea.value.trim();
-            if (text.includes(',')) {
-                cycleInterval = setInterval(executeUpdate, 2000);
+            update(); // Show first one immediately
+            if (inputBox.value.includes(',')) {
+                timer = setInterval(update, 2000);
             }
         }
 
-        enterBtn.addEventListener('click', startSequence);
+        // Click the button
+        btn.onclick = run;
 
-        inputArea.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+        // Press Keyboard Enter
+        inputBox.onkeydown = function(e) {
+            if (e.key === "Enter") {
                 e.preventDefault();
-                startSequence();
+                run();
             }
-        });
+        };
     </script>
+
 </body>
 </html>
