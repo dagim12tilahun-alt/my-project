@@ -34,9 +34,8 @@
             align-items: center;
         }
 
-        /* Seven Segment Look */
         .display-text {
-            font-family: 'Courier New', Courier, monospace; /* Monospace for alignment */
+            font-family: 'Courier New', Courier, monospace;
             font-size: 80px;
             font-weight: bold;
             letter-spacing: 10px;
@@ -50,14 +49,15 @@
         }
 
         .ghost-segments {
-            color: #1a1a1a; /* Faint segments in background */
+            color: #1a1a1a;
             position: absolute;
             z-index: 1;
         }
 
         .controls {
             margin-top: 40px;
-            width: 300px;
+            width: 350px;
+            text-align: center;
         }
 
         label {
@@ -76,7 +76,19 @@
             padding: 10px;
             border-radius: 5px;
             resize: none;
-            font-size: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #D3D3D3;
+        }
+
+        .hint {
+            color: #444;
+            font-size: 11px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -90,44 +102,55 @@
     </div>
 
     <div class="controls">
-        <label>Input Sequence (e.g. 1.a, 22.c)</label>
-        <textarea id="inputSequence" rows="3">1.a, 22.c, 63.a</textarea>
+        <label>Type Sequence and Press Enter</label>
+        <textarea id="inputSequence" rows="2" placeholder="e.g. 1.a, 22.c, 63.a"></textarea>
+        <div class="hint">Press "Enter" to start the sequence</div>
     </div>
 
     <script>
         const clockElement = document.getElementById('clock');
         const inputArea = document.getElementById('inputSequence');
+        
         let index = 0;
-
+        let cycleInterval = null;
         const letterMap = { a: '1', b: '2', c: '3', d: '4', e: '5' };
 
         function updateDisplay() {
             const rawValue = inputArea.value;
-            const sequence = rawValue.split(',').map(item => item.trim());
+            const sequence = rawValue.split(',').map(item => item.trim()).filter(item => item !== "");
 
-            if (sequence.length === 0) return;
+            if (sequence.length === 0) {
+                clearInterval(cycleInterval);
+                return;
+            }
 
             const currentPair = sequence[index % sequence.length];
-            // Regex captures numbers and letters a-e
             const match = currentPair.match(/(\d+)\.([a-eA-E])/);
 
             if (match) {
                 const numPart = match[1].padStart(2, '0').slice(-2);
                 const letterPart = match[2].toLowerCase();
                 const mappedDigit = letterMap[letterPart];
-
                 clockElement.innerText = ${numPart}:0${mappedDigit};
             }
 
             index++;
         }
+// Trigger on "Enter" key
+        inputArea.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevents a new line in textarea
+                
+                // Clear any existing cycle
+                clearInterval(cycleInterval);
+                index = 0;
 
-        // Run every 2 seconds
-        setInterval(updateDisplay, 2000);
+                // Show the first one immediately
+                updateDisplay();
 
-        // Reset index when user changes input to start fresh
-        inputArea.addEventListener('input', () => {
-            index = 0;
+                // Start the 2-second cycle for the rest
+                cycleInterval = setInterval(updateDisplay, 2000);
+            }
         });
     </script>
 </body>
