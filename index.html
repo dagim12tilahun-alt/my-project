@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
-<body>
+<body style="background-color: #0e0e0e; color: #D3D3D3; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: monospace; margin: 0;">
 
-    <h1 id="watch" style="font-size: 100px; font-family: monospace;">00:00</h1>
+    <div id="watch" style="font-size: 120px; margin-bottom: 30px; letter-spacing: 5px;">00:00</div>
 
-    <textarea id="inputBox" rows="4" placeholder="Type 37.e here"></textarea>
-    <br><br>
-    
-    <button id="btn" style="padding: 20px; font-size: 20px;">ENTER</button>
+    <div style="width: 350px; display: flex; flex-direction: column; gap: 15px;">
+        <textarea id="inputBox" rows="4" style="width: 100%; padding: 15px; background: #1a1a1a; color: #fff; border: 2px solid #333; border-radius: 8px; font-size: 18px; outline: none;" placeholder="Example: 1a 22/c 63.a"></textarea>
+        
+        <button id="btn" style="width: 100%; padding: 20px; cursor: pointer; background: #D3D3D3; color: #111; font-weight: bold; border: none; border-radius: 8px; font-size: 18px; text-transform: uppercase;">ENTER</button>
+    </div>
 
     <script>
         const watch = document.getElementById('watch');
@@ -19,46 +20,49 @@
         const map = { a: '1', b: '2', c: '3', d: '4', e: '5' };
 
         function run() {
-            clearInterval(timer); // Stop old cycle
+            // Stop previous cycle and reset counter
+            clearInterval(timer);
             counter = 0;
 
             const update = () => {
-                const text = inputBox.value.trim();
-                // Split by comma or treat as one item
-                const list = text.split(',').map(s => s.trim()).filter(s => s.length > 0);
-
-                if (list.length === 0) return;
-
-                const current = list[counter % list.length];
+                const text = inputBox.value;
                 
-                // Purely looking for [Number].[Letter]
-                const parts = current.split('.');
-                if (parts.length === 2) {
-                    const num = parts[0].padStart(2, '0').slice(-2);
-                    const letter = parts[1].toLowerCase().trim();
-                    const converted = map[letter] || '0';
-                    
-                    // The Result
-                    watch.innerText = num + ":0" + converted;
-                }
+                // Matches any number, then ignores all symbols until it finds a, b, c, d, or e
+                const matches = [...text.matchAll(/(\d+)[^a-e]*([a-e])/gi)];
+
+                if (matches.length === 0) return;
+
+                const currentPair = matches[counter % matches.length];
+                
+                // Left Side: Pad number to 2 digits (e.g. 1 -> 01)
+                const num = currentPair[1].padStart(2, '0').slice(-2);
+                
+                // Right Side: Map letter to number (e.g. e -> 5)
+                const letter = currentPair[2].toLowerCase();
+                const converted = map[letter] || '0';
+                
+                // Display: LeftPart : 0 + ConvertedLetter
+                watch.innerText = num + ":0" + converted;
+                
                 counter++;
             };
 
-            update(); // Show first one immediately
-            if (inputBox.value.includes(',')) {
-                timer = setInterval(update, 2000);
-            }
+            // Run first pair immediately
+            update();
+
+            // Set cycle to 4 seconds (4000 milliseconds)
+            timer = setInterval(update, 4000);
         }
 
-        // Click the button
+        // Trigger on button click
         btn.onclick = run;
 
-        // Press Keyboard Enter
-        inputBox.onkeydown = function(e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                run();
-            }
+        // Trigger on Enter key
+        inputBox.onkeydown = (e) => { 
+            if (e.key === "Enter") { 
+                e.preventDefault(); 
+                run(); 
+            } 
         };
     </script>
 
