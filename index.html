@@ -44,13 +44,13 @@
         }
 
         .active-segments {
-            color: #D3D3D3; /* Light Gray */
+            color: #D3D3D3;
             z-index: 2;
             position: relative;
         }
 
         .ghost-segments {
-            color: #1a1a1a; /* Faint "Off" Segments */
+            color: #1a1a1a;
             position: absolute;
             z-index: 1;
         }
@@ -84,18 +84,10 @@
             letter-spacing: 2px;
             border-radius: 8px;
             cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .enter-btn:hover {
-            background-color: #ffffff;
-        }
-
-        .hint {
-            color: #444;
-            font-size: 12px;
-            text-align: center;
-            margin-top: 5px;
+        .enter-btn:active {
+            background-color: #999;
         }
     </style>
 </head>
@@ -109,9 +101,8 @@
     </div>
 
     <div class="controls">
-        <textarea id="inputSequence" rows="2" placeholder="Example: 1.a, 22.c, 63.a"></textarea>
+        <textarea id="inputSequence" rows="2" placeholder="Example: 37.e"></textarea>
         <button id="enterBtn" class="enter-btn">Enter</button>
-        <div class="hint">Type sequence then click Enter or press keyboard Enter</div>
     </div>
 
     <script>
@@ -124,43 +115,46 @@
         const letterMap = { a: '1', b: '2', c: '3', d: '4', e: '5' };
 
         function startSequence() {
-            // Stop any existing timer
             clearInterval(cycleInterval);
             index = 0;
 
             const executeUpdate = () => {
-                const text = inputArea.value;
-                const sequence = text.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                const text = inputArea.value.trim();
+                // Split by comma OR just take the whole thing if no comma
+                const sequence = text.includes(',') 
+                    ? text.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                    : [text];
 
-                if (sequence.length === 0) return;
+                if (sequence.length === 0 || !sequence[0]) return;
 
                 const currentItem = sequence[index % sequence.length];
-                // Regex for: Number followed by . followed by letter a-e
-                const match = currentItem.match(/(\d+)\.([a-eA-E])/);
+                // Improved Regex: looks for digits, a dot, then a letter a-e
+                const match = currentItem.match(/(\d+)\s*\.\s*([a-eA-E])/);
 if (match) {
                     const numPart = match[1].padStart(2, '0').slice(-2);
                     const letterPart = match[2].toLowerCase();
                     const mappedNum = letterMap[letterPart];
                     
-                    // Format: XX:0Y
                     clockElement.innerText = ${numPart}:0${mappedNum};
+                } else {
+                    console.log("No match found for:", currentItem);
                 }
                 index++;
             };
 
-            // Run first result immediately
             executeUpdate();
-            // Then every 2 seconds
-            cycleInterval = setInterval(executeUpdate, 2000);
+            // Only start interval if there's more than one item
+            const text = inputArea.value.trim();
+            if (text.includes(',')) {
+                cycleInterval = setInterval(executeUpdate, 2000);
+            }
         }
 
-        // Click event
         enterBtn.addEventListener('click', startSequence);
 
-        // Keyboard Enter event
         inputArea.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Stop new line
+                e.preventDefault();
                 startSequence();
             }
         });
