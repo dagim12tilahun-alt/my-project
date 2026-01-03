@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Visualizer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #display-screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        #ui-layer {
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>SMS Visualizer</h1>
+        <p>Contact: noba (+251965351415)</p>
+        <button onclick="startProcess()">Simulate SMS Input</button>
+    </div>
+
+    <div id="display-screen"></div>
+
+    <script>
+        const colorMap = {
+            'a': 'red',
+            'b': 'blue',
+            'c': 'green',
+            'd': 'yellow',
+            'e': 'purple'
+        };
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function startProcess() {
+            // Simulation: In a real app, this data would be fetched via a native bridge
+            const rawInput = prompt("Enter the SMS text (e.g., 'abcde'):", "abcde");
+            if (!rawInput) return;
+
+            // Filter letters a-e only
+            const processedLetters = rawInput.toLowerCase().split('').filter(char => char >= 'a' && char <= 'e');
+
+            const screen = document.getElementById('display-screen');
+            const ui = document.getElementById('ui-layer');
+
+            ui.style.display = 'none';
+            screen.style.display = 'block';
+
+            // Loop the entire process 3 times
+            for (let loop = 0; loop < 3; loop++) {
+                for (let letter of processedLetters) {
+                    // Show Letter Color
+                    screen.style.backgroundColor = colorMap[letter];
+                    await sleep(2000);
+
+                    // Show Black Separator
+                    screen.style.backgroundColor = 'black';
+                    await sleep(500); // Short gap to distinguish between colors
+                }
+
+                // Final 2-second White Light at end of sequence
+                screen.style.backgroundColor = 'white';
+                await sleep(2000);
+                
+                // Back to black before next loop
+                screen.style.backgroundColor = 'black';
+                await sleep(500);
+            }
+
+            // Clear data and reset
+            screen.style.display = 'none';
+            ui.style.display = 'block';
+            alert("Sequence Complete. Data Cleared.");
+        }
+    </script>
+</body>
+</html>
