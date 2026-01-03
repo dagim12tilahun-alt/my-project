@@ -3,43 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMS Visualizer</title>
+    <title>Automatic SMS Visualizer</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: black;
+            background-color: black; /* Starts black to hide UI */
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
         }
-        #display-screen {
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        #ui-layer {
-            color: white;
-            text-align: center;
-            font-family: sans-serif;
+        #display {
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <h1>SMS Visualizer</h1>
-        <p>Contact: noba (+251965351415)</p>
-        <button onclick="startProcess()">Simulate SMS Input</button>
-    </div>
-
-    <div id="display-screen"></div>
+    <div id="display"></div>
 
     <script>
-        const colorMap = {
+        // Mapping letters to colors
+        const colors = {
             'a': 'red',
             'b': 'blue',
             'c': 'green',
@@ -47,48 +36,47 @@
             'e': 'purple'
         };
 
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-        async function startProcess() {
-            // Simulation: In a real app, this data would be fetched via a native bridge
-            const rawInput = prompt("Enter the SMS text (e.g., 'abcde'):", "abcde");
-            if (!rawInput) return;
+        window.onload = async function() {
+            // 1. Get the SMS text from the URL (?msg=...) passed by MacroDroid
+            const params = new URLSearchParams(window.location.search);
+            const smsText = params.get('msg');
 
-            // Filter letters a-e only
-            const processedLetters = rawInput.toLowerCase().split('').filter(char => char >= 'a' && char <= 'e');
+            if (smsText) {
+                const display = document.getElementById('display');
+                
+                // 2. Process only letters a-e
+                const sequence = smsText.toLowerCase()
+                                        .split('')
+                                        .filter(char => char >= 'a' && char <= 'e');
 
-            const screen = document.getElementById('display-screen');
-            const ui = document.getElementById('ui-layer');
+                // 3. Loop the entire process 3 times
+                for (let i = 0; i < 3; i++) {
+                    for (let letter of sequence) {
+                        // Display Letter Color
+                        display.style.backgroundColor = colors[letter];
+                        await sleep(2000);
 
-            ui.style.display = 'none';
-            screen.style.display = 'block';
+                        // Black Separator
+                        display.style.backgroundColor = 'black';
+                        await sleep(500); 
+                    }
 
-            // Loop the entire process 3 times
-            for (let loop = 0; loop < 3; loop++) {
-                for (let letter of processedLetters) {
-                    // Show Letter Color
-                    screen.style.backgroundColor = colorMap[letter];
+                    // 4. 2-second White Light at the end of the sequence
+                    display.style.backgroundColor = 'white';
                     await sleep(2000);
 
-                    // Show Black Separator
-                    screen.style.backgroundColor = 'black';
-                    await sleep(500); // Short gap to distinguish between colors
+                    // Return to black before next loop or finish
+                    display.style.backgroundColor = 'black';
+                    await sleep(500);
                 }
 
-                // Final 2-second White Light at end of sequence
-                screen.style.backgroundColor = 'white';
-                await sleep(2000);
-                
-                // Back to black before next loop
-                screen.style.backgroundColor = 'black';
-                await sleep(500);
+                // 5. Clear data/Reset screen
+                display.style.backgroundColor = 'black';
+                console.log("Sequence complete. Waiting for new input.");
             }
-
-            // Clear data and reset
-            screen.style.display = 'none';
-            ui.style.display = 'block';
-            alert("Sequence Complete. Data Cleared.");
-        }
+        };
     </script>
 </body>
 </html>
