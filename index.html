@@ -3,80 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automatic SMS Visualizer</title>
+    <title>Automatic Light Show</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black; /* Starts black to hide UI */
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: #000000; display: flex;
+            justify-content: center; align-items: flex-start;
+            padding-top: 50px; font-family: sans-serif; overflow: hidden;
         }
-        #display {
-            width: 100vw;
-            height: 100vh;
+        #input-container { width: 90%; max-width: 500px; z-index: 10; text-align: center; }
+        input {
+            width: 100%; height: 50px; background: rgba(255, 255, 255, 0.8);
+            border: none; border-radius: 10px; padding: 0 15px;
+            font-size: 18px; outline: none; box-sizing: border-box;
         }
+        .status-text { color: white; margin-top: 10px; font-size: 14px; }
+        .hidden { display: none; }
     </style>
 </head>
-<body>
+<body id="bg">
 
-    <div id="display"></div>
+    <div id="input-container">
+        <input type="text" id="letterInput" placeholder="Waiting for auto-paste..." autofocus>
+        <div id="status" class="status-text">Starting in 5 seconds...</div>
+    </div>
 
     <script>
-        // Mapping letters to colors
+        const bg = document.getElementById('bg');
+        const inputContainer = document.getElementById('input-container');
+        const inputField = document.getElementById('letterInput');
+        const status = document.getElementById('status');
+
         const colors = {
-            'a': 'red',
-            'b': 'blue',
-            'c': 'green',
-            'd': 'yellow',
-            'e': 'purple'
+            'a': '#FF0000', 'b': '#00FF00', 'c': '#0000FF', 'd': '#FFFF00', 'e': '#FFA500'
         };
 
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        window.onload = async function() {
-            // 1. Get the SMS text from the URL (?msg=...) passed by MacroDroid
-            const params = new URLSearchParams(window.location.search);
-            const smsText = params.get('msg');
+        // --- NEW AUTO-PASTE LOGIC ---
+        window.onload = async () => {
+            // Wait 5 seconds as requested
+            for (let i = 5; i > 0; i--) {
+                status.innerText = Starting in ${i} seconds...;
+                await sleep(1000);
+            }
+            status.innerText = "Attempting to read clipboard...";
 
-            if (smsText) {
-                const display = document.getElementById('display');
-                
-                // 2. Process only letters a-e
-                const sequence = smsText.toLowerCase()
-                                        .split('')
-                                        .filter(char => char >= 'a' && char <= 'e');
-
-                // 3. Loop the entire process 3 times
-                for (let i = 0; i < 3; i++) {
-                    for (let letter of sequence) {
-                        // Display Letter Color
-                        display.style.backgroundColor = colors[letter];
-                        await sleep(2000);
-
-                        // Black Separator
-                        display.style.backgroundColor = 'black';
-                        await sleep(500); 
-                    }
-
-                    // 4. 2-second White Light at the end of the sequence
-                    display.style.backgroundColor = 'white';
-                    await sleep(2000);
-
-                    // Return to black before next loop or finish
-                    display.style.backgroundColor = 'black';
-                    await sleep(500);
+            try {
+                // Try to read clipboard automatically
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    inputField.value = text;
+                    startShow(text);
+                } else {
+                    status.innerText = "Clipboard empty. Please paste manually.";
                 }
-
-                // 5. Clear data/Reset screen
-                display.style.backgroundColor = 'black';
-                console.log("Sequence complete. Waiting for new input.");
+            } catch (err) {
+                status.innerText = "Tap anywhere to give permission to paste.";
+                // If browser blocks auto-read, start on first click
+                document.body.onclick = async () => {
+                    const text = await navigator.clipboard.readText();
+                    inputField.value = text;
+                    startShow(text);
+                };
             }
         };
+
+        async function startShow(text) {
+            const sequence = text.toLowerCase().split('').filter(char => colors[char]);
+            if (sequence.length === 0) return;
+
+            inputContainer.classList.add('hidden');
+
+            for (let loop = 0; loop < 3; loop++) { // Looping 3 times per your earlier requirement
+                for (let char of sequence) {
+                    bg.style.backgroundColor = colors[char];
+                    await sleep(2000);
+                    bg.style.backgroundColor = '#000000';
+                    await sleep(500);
+                }
+                bg.style.backgroundColor = '#FFFFFF';
+                await sleep(2000);
+                bg.style.backgroundColor = '#000000';
+                await sleep(500);
+            }
+
+            inputContainer.classList.remove('hidden');
+            status.innerText = "Show finished. Waiting for next message...";
+            inputField.value = '';
+        }
+
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startShow(inputField.value);
+        });
     </script>
 </body>
 </html>
